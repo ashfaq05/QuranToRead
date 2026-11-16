@@ -75,7 +75,6 @@ export default function App() {
   const [activePage, setActivePage] = useState<number>(
     () => loadProgress().lastPosition.page || 1
   );
-  const [autoStartVoice, setAutoStartVoice] = useState(false);
 
   // Track if user explicitly navigated inside Reader so cloud profile doesn't yank them back
   const hasExplicitlyNavigatedRef = useRef(false);
@@ -307,7 +306,7 @@ export default function App() {
     (
       surah: number,
       ayah: number,
-      options?: { startVoice?: boolean; pageMode?: boolean; page?: number }
+      options?: { pageMode?: boolean; page?: number }
     ) => {
       hasExplicitlyNavigatedRef.current = true;
       setActiveSurah(surah);
@@ -319,7 +318,6 @@ export default function App() {
         const meta = SURAH_META.find((s) => s.number === surah);
         setActivePage(meta?.startPage ?? 1);
       }
-      setAutoStartVoice(Boolean(options?.startVoice));
       setActiveView("reader");
     },
     []
@@ -514,7 +512,6 @@ export default function App() {
       <TopBar
         activeView={activeView}
         onNavigate={(view) => {
-          setAutoStartVoice(false);
           setActiveView(view);
         }}
         user={user}
@@ -566,7 +563,6 @@ export default function App() {
           activeAyah={activeAyah}
           pageMode={pageMode}
           activePage={activePage}
-          autoStartVoice={autoStartVoice}
           settings={settings}
           progress={progress}
           user={user}

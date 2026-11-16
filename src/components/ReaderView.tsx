@@ -8,12 +8,7 @@ import {
   Eye,
   EyeOff,
   List,
-  Mic,
-  MicOff,
-  Pause,
-  Play,
   SlidersHorizontal,
-  Square,
   X,
 } from "lucide-react";
 import {
@@ -33,7 +28,6 @@ import {
   ReadingTheme,
   TranslationFormat,
 } from "../utils/quranStore";
-import { useVoiceRecitation } from "../hooks/useVoiceRecitation";
 
 interface ReaderViewProps {
   quranMap: Record<number, SurahData>;
@@ -42,7 +36,6 @@ interface ReaderViewProps {
   activeAyah: number;
   pageMode: boolean;
   activePage: number;
-  autoStartVoice?: boolean;
   settings: ReadingSettings;
   progress: ProgressState;
   user: User | null;
@@ -126,7 +119,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   activeAyah,
   pageMode,
   activePage,
-  autoStartVoice = false,
   settings,
   progress,
   user,
@@ -201,11 +193,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     ];
   }, [pageMode, isFullLoaded, quranMap, activePage, currentSurahData]);
 
-  // Flat ayah list currently visible for voice matching
-  const visibleAyahs = useMemo(() => {
-    return renderedBlocks.flatMap((b) => b.ayahs);
-  }, [renderedBlocks]);
-
   const currentVerseObj = useMemo(() => {
     return (
       currentSurahData?.ayahs.find((a) => a.n === activeAyah) ??
@@ -272,60 +259,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleVoiceVerseMatched = (
-    matchedAyahNumber: number,
-    _confidence: "high" | "moderate",
-    _transcript: string
-  ) => {
-    // Locate which block has this ayah in case pageMode shows multiple Surahs
-    const ownerBlock =
-      renderedBlocks.find((b) =>
-        b.ayahs.some((a) => a.n === matchedAyahNumber)
-      ) ?? renderedBlocks[0];
-    const targetSurah = ownerBlock?.surahNumber ?? activeSurah;
-    const targetSurahName =
-      ownerBlock?.surahName ?? currentSurahMeta.englishName;
-    const matchedObj = ownerBlock?.ayahs.find((a) => a.n === matchedAyahNumber);
-
-    onSelectPosition(targetSurah, matchedAyahNumber, {
-      mode: "voice",
-      page: matchedObj?.p,
-    });
-    if (matchedObj) {
-      onConfirmVerse({
-        surah: targetSurah,
-        surahName: targetSurahName,
-        ayah: matchedAyahNumber,
-        page: matchedObj.p,
-        juz: matchedObj.j,
-        mode: "voice",
-      });
-      ensureSession(targetSurah, targetSurahName, matchedAyahNumber, "voice");
-    }
-  };
-
-  const voice = useVoiceRecitation({
-    ayahs: visibleAyahs,
-    surahName: currentSurahMeta.englishName,
-    currentAyah: activeAyah,
-    onVerseMatched: handleVoiceVerseMatched,
-  });
-
-  // Optional auto-start voice when user enters via "Voice Reading" on Home
-  const autoStartedRef = useRef(false);
-  useEffect(() => {
-    if (
-      autoStartVoice &&
-      !autoStartedRef.current &&
-      settings.voiceTrackingEnabled &&
-      voice.status === "idle" &&
-      visibleAyahs.length > 0
-    ) {
-      autoStartedRef.current = true;
-      void voice.startListening();
-    }
-  }, [autoStartVoice, settings.voiceTrackingEnabled, voice, visibleAyahs.length]);
 
   // Scroll active verse into view when position changes
   useEffect(() => {
@@ -429,7 +362,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       name:
         bookmarkNameInput.trim() ||
         `Surah ${currentSurahMeta.englishName} · ${activeAyah}`,
-      mode: voice.status === "listening" ? "voice" : "manual",
+      mode: "manual",
       fromModal: true,
     });
     setShowBookmarkModal(false);
@@ -448,9 +381,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     );
   }, [navSearch]);
 
-  const readingModeLabel =
-    voice.status === "listening" ? "Voice tracking active" : "Reading";
-
   return (
     <div className="pb-32">
       {/* Top Reader Context & Navigation Bar */}
@@ -468,7 +398,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               </span>
             </button>
             <span className="hidden sm:inline text-xs text-[var(--text-muted)] font-mono-tabular truncate">
-              {readingModeLabel} · Verse {activeAyah}/
+              Reading · Verse {activeAyah}/
               {currentSurahMeta.numberOfAyahs} · Juz{" "}
               {currentVerseObj?.j ?? currentSurahMeta.startJuz} · Page{" "}
               {pageMode ? activePage : currentVerseObj?.p ?? currentSurahMeta.startPage}
@@ -658,10 +588,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                                     page: ayah.p,
                                     juz: ayah.j,
                                     name: `Surah ${block.surahName} · Ayah ${ayah.n}`,
-                                    mode:
-                                      voice.status === "listening"
-                                        ? "voice"
-                                        : "manual",
+                                    mode: "manual",
                                   })
                                 }
                                 aria-label={`Bookmark Surah ${block.surahName} Ayah ${ayah.n}`}
@@ -775,90 +702,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         )}
       </main>
 
-      {/* Sticky Bottom Reader & Voice Control Dock */}
+      {/* Sticky Bottom Reader Control Dock */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-[var(--border-hairline)] bg-[var(--bg-canvas)]/95 backdrop-blur-md">
-        <div className="mx-auto max-w-4xl px-4 py-2.5 sm:px-6 space-y-2">
-          {/* Live Voice Feedback Strip when listening or paused or error */}
-          {(voice.status === "listening" ||
-            voice.status === "paused" ||
-            voice.status === "error") && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-hairline)] pb-2 text-xs">
-              <div className="flex items-center gap-3 min-w-0">
-                {/* Genuine RMS audio level bars */}
-                <div
-                  aria-hidden="true"
-                  className="flex items-end gap-0.5 h-4 shrink-0"
-                >
-                  {[0.25, 0.5, 0.8, 0.5, 0.25].map((scale, i) => {
-                    const barHeight =
-                      voice.status === "listening"
-                        ? Math.max(20, Math.min(100, voice.micLevel * 100 * scale + 15))
-                        : 20;
-                    return (
-                      <span
-                        key={i}
-                        className="w-1 rounded-full bg-[var(--accent-primary)] transition-all duration-75"
-                        style={{ height: `${barHeight}%` }}
-                      />
-                    );
-                  })}
-                </div>
-
-                {voice.status === "error" ? (
-                  <span className="text-red-600 dark:text-red-400">
-                    {voice.errorMessage}
-                  </span>
-                ) : (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-medium text-[var(--text-ink)] whitespace-nowrap">
-                      {voice.status === "paused"
-                        ? "Paused (position held)"
-                        : voice.matchConfidence === "high"
-                          ? "Matched"
-                          : voice.matchConfidence === "moderate"
-                            ? "Tracking"
-                            : "Listening for Arabic recitation"}
-                    </span>
-                    {voice.lastTranscript && (
-                      <span
-                        dir="rtl"
-                        className="truncate max-w-[180px] sm:max-w-xs text-[var(--text-muted)]"
-                      >
-                        {voice.lastTranscript}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Manual verse correction controls */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[var(--text-muted)] hidden sm:inline">
-                  Adjust verse:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleStepAyah(-1)}
-                  disabled={activeAyah <= 1}
-                  className="rounded border border-[var(--border-hairline)] bg-[var(--bg-elevated)] px-2 py-1 text-[11px] font-medium text-[var(--text-ink)] disabled:opacity-40 cursor-pointer"
-                >
-                  Prev
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleStepAyah(1)}
-                  disabled={
-                    !currentSurahData ||
-                    activeAyah >= currentSurahData.ayahs.length
-                  }
-                  className="rounded border border-[var(--border-hairline)] bg-[var(--bg-elevated)] px-2 py-1 text-[11px] font-medium text-[var(--text-ink)] disabled:opacity-40 cursor-pointer"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-
+        <div className="mx-auto max-w-4xl px-4 py-2.5 sm:px-6">
           {/* Primary Reader Controls Row */}
           <div className="flex items-center justify-between gap-3">
             {/* Left: Quick Font Size & Translation Toggle */}
@@ -906,64 +752,32 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               </button>
             </div>
 
-            {/* Center: Voice Listening Controls */}
-            {settings.voiceTrackingEnabled && (
-              <div className="flex items-center gap-2 shrink-0">
-                {voice.status === "idle" || voice.status === "error" ? (
-                  <button
-                    type="button"
-                    onClick={() => void voice.startListening()}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-medium text-[var(--accent-primary-fg)] hover:opacity-90 whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    <Mic className="h-4 w-4" />
-                    <span>Listen</span>
-                  </button>
-                ) : voice.status === "requesting" ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)]/70 px-4 py-2 text-xs sm:text-sm font-medium text-[var(--accent-primary-fg)] whitespace-nowrap shrink-0"
-                  >
-                    <Mic className="h-4 w-4" />
-                    <span>Starting mic...</span>
-                  </button>
-                ) : (
-                  <>
-                    {voice.status === "listening" ? (
-                      <button
-                        type="button"
-                        onClick={voice.pauseListening}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent-primary)] bg-[var(--bg-highlight)] px-3.5 py-2 text-xs font-medium text-[var(--text-ink)] whitespace-nowrap shrink-0 cursor-pointer"
-                      >
-                        <Pause className="h-3.5 w-3.5" />
-                        <span>Pause</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => void voice.startListening()}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-[var(--accent-primary-fg)] whitespace-nowrap shrink-0 cursor-pointer"
-                      >
-                        <Play className="h-3.5 w-3.5" />
-                        <span>Resume</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        voice.stopListening();
-                        flushSession();
-                      }}
-                      aria-label="Stop voice reading"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-medium text-[var(--text-ink)] hover:border-red-500 whitespace-nowrap shrink-0 cursor-pointer"
-                    >
-                      <Square className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Stop</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+            {/* Center: Verse Step Controls */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleStepAyah(-1)}
+                disabled={activeAyah <= 1}
+                aria-label="Previous verse"
+                className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-ink)] disabled:opacity-40 hover:border-[var(--accent-primary)] whitespace-nowrap cursor-pointer disabled:cursor-default"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Prev</span>
+              </button>
+              <span className="font-mono-tabular px-1.5 text-xs text-[var(--text-muted)] whitespace-nowrap">
+                {activeAyah}/{currentSurahMeta.numberOfAyahs}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleStepAyah(1)}
+                disabled={activeAyah >= currentSurahMeta.numberOfAyahs}
+                aria-label="Next verse"
+                className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-ink)] disabled:opacity-40 hover:border-[var(--accent-primary)] whitespace-nowrap cursor-pointer disabled:cursor-default"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
 
             {/* Right: Save Bookmark & Customize */}
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1186,36 +1000,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             </div>
           </div>
 
-          {/* Voice Tracking On/Off */}
-          <div className="flex items-center justify-between border-t border-[var(--border-hairline)] pt-3">
-            <span className="text-xs font-medium text-[var(--text-ink)]">
-              Voice tracking controls
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                if (settings.voiceTrackingEnabled && voice.status === "listening") {
-                  voice.stopListening();
-                }
-                onUpdateSettings({
-                  voiceTrackingEnabled: !settings.voiceTrackingEnabled,
-                });
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-hairline)] px-3 py-1 text-xs font-medium text-[var(--text-ink)] cursor-pointer"
-            >
-              {settings.voiceTrackingEnabled ? (
-                <>
-                  <Mic className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
-                  <span>On</span>
-                </>
-              ) : (
-                <>
-                  <MicOff className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-                  <span>Off</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
       )}
 

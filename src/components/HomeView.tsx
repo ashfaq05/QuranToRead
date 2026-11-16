@@ -4,7 +4,6 @@ import {
   BookOpen,
   Bookmark,
   BarChart3,
-  Mic,
   Search,
   ArrowRight,
   LogOut,
@@ -33,7 +32,7 @@ interface HomeViewProps {
   onOpenPosition: (
     surah: number,
     ayah: number,
-    options?: { startVoice?: boolean; pageMode?: boolean; page?: number }
+    options?: { pageMode?: boolean; page?: number }
   ) => void;
   onNavigate: (view: AppView) => void;
 }
@@ -160,8 +159,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
                 <span>Last reading position</span>
                 <span aria-hidden="true">·</span>
-                <span className="capitalize">{lastPosition.mode} mode</span>
-                <span aria-hidden="true">·</span>
                 <span>
                   {isOfflineReady
                     ? "Offline copy ready"
@@ -187,18 +184,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
               >
                 <BookOpen className="h-4 w-4" />
                 <span>Continue Reading</span>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  onOpenPosition(lastPosition.surah, lastPosition.ayah, {
-                    startVoice: true,
-                  })
-                }
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm font-medium text-[var(--text-ink)] transition-colors duration-150 hover:border-[var(--accent-primary)] whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Mic className="h-4 w-4" />
-                <span>Voice Reading</span>
               </button>
             </div>
           </div>

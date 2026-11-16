@@ -171,8 +171,7 @@ export const BookmarksView: React.FC<BookmarksViewProps> = ({
             <p className="text-xs text-[var(--text-muted)] font-mono-tabular">
               Surah {progress.lastPosition.surah}, Ayah{" "}
               {progress.lastPosition.ayah} · Page {progress.lastPosition.page} ·{" "}
-              {formatReadableDate(progress.lastPosition.updatedAt)} · Mode:{" "}
-              {progress.lastPosition.mode === "voice" ? "Voice" : "Manual"}
+              {formatReadableDate(progress.lastPosition.updatedAt)}
             </p>
           </div>
           <button
@@ -270,10 +269,6 @@ export const BookmarksView: React.FC<BookmarksViewProps> = ({
                     <span>Page {bm.page}</span>
                     <span aria-hidden="true">·</span>
                     <span>Saved {formatReadableDate(bm.createdAt)}</span>
-                    <span aria-hidden="true">·</span>
-                    <span className="font-sans">
-                      {bm.mode === "voice" ? "Voice" : "Manual"}
-                    </span>
                   </div>
                 </div>
 

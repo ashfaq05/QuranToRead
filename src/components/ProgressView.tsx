@@ -220,14 +220,14 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
               Recent Reading Sessions
             </h2>
             <p className="text-xs text-[var(--text-muted)]">
-              Confirmed voice and manual reading sessions
+              Confirmed reading sessions
             </p>
           </div>
 
           {progress.sessions.length === 0 ? (
             <p className="py-10 text-sm text-[var(--text-muted)]">
-              Your reading sessions will appear here once you read or recite in
-              the Quran Reader.
+              Your reading sessions will appear here once you read in the Quran
+              Reader.
             </p>
           ) : (
             <div className="divide-y divide-[var(--border-hairline)]">
@@ -244,8 +244,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
                       {new Date(sess.endedAt).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
-                      })}{" "}
-                      · {sess.mode === "voice" ? "Voice" : "Manual"}
+                      })}
                     </p>
                   </div>
                   <div className="text-right shrink-0 font-mono-tabular">

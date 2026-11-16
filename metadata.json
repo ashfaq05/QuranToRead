@@ -1,6 +1,6 @@
 {
   "name": "Al-Kitab — Digital Quran Reader",
-  "description": "A calm digital Quran reading book with live Arabic voice tracking, Roman Hindi and Devanagari translations, bookmarks, and reading progress analytics.",
-  "requestFramePermissions": ["microphone"],
+  "description": "A calm digital Quran reading book with Roman Hindi and Devanagari translations, bookmarks, and reading progress analytics.",
+  "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
