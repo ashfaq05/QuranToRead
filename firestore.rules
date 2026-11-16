@@ -1,0 +1,323 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidDateKey(dateKey) {
+      return dateKey is string && dateKey.size() == 10 && dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isValidVerseKey(verseKey) {
+      return verseKey is string && verseKey.size() >= 3 && verseKey.size() <= 16 && verseKey.matches('^[0-9]{1,3}_[0-9]{1,3}$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'lastSurah',
+          'lastSurahName',
+          'lastAyah',
+          'lastPage',
+          'lastJuz',
+          'lastMode',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'photoURL',
+          'theme',
+          'arabicFontSize',
+          'translationFontSize',
+          'translationFormat',
+          'arabicFont',
+          'lineSpacing',
+          'showTranslation',
+          'voiceTrackingEnabled',
+          'lastSurah',
+          'lastSurahName',
+          'lastAyah',
+          'lastPage',
+          'lastJuz',
+          'lastMode',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && data.uid.size() >= 1
+        && data.uid.size() <= 128
+        && data.uid == request.auth.uid
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+        && (!('theme' in data) || (data.theme is string && data.theme in ['light', 'sepia', 'dark']))
+        && (!('arabicFontSize' in data) || (data.arabicFontSize is string && data.arabicFontSize in ['sm', 'md', 'lg', 'xl']))
+        && (!('translationFontSize' in data) || (data.translationFontSize is string && data.translationFontSize in ['sm', 'md', 'lg', 'xl']))
+        && (!('translationFormat' in data) || (data.translationFormat is string && data.translationFormat in ['hinglish', 'hindi', 'both', 'transliteration']))
+        && (!('arabicFont' in data) || (data.arabicFont is string && data.arabicFont in ['amiri', 'scheherazade', 'naskh']))
+        && (!('lineSpacing' in data) || (data.lineSpacing is string && data.lineSpacing in ['compact', 'normal', 'relaxed']))
+        && (!('showTranslation' in data) || data.showTranslation is bool)
+        && (!('voiceTrackingEnabled' in data) || data.voiceTrackingEnabled is bool)
+        && data.lastSurah is int && data.lastSurah >= 1 && data.lastSurah <= 114
+        && data.lastSurahName is string && data.lastSurahName.size() >= 1 && data.lastSurahName.size() <= 80
+        && data.lastAyah is int && data.lastAyah >= 1 && data.lastAyah <= 286
+        && data.lastPage is int && data.lastPage >= 1 && data.lastPage <= 604
+        && data.lastJuz is int && data.lastJuz >= 1 && data.lastJuz <= 30
+        && data.lastMode is string && data.lastMode in ['voice', 'manual']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBookmark(data) {
+      return data.keys().hasAll([
+          'ownerId',
+          'surah',
+          'surahName',
+          'ayah',
+          'page',
+          'juz',
+          'name',
+          'mode',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'surah',
+          'surahName',
+          'ayah',
+          'page',
+          'juz',
+          'name',
+          'mode',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId.size() >= 1
+        && data.ownerId.size() <= 128
+        && data.ownerId == request.auth.uid
+        && data.surah is int && data.surah >= 1 && data.surah <= 114
+        && data.surahName is string && data.surahName.size() >= 1 && data.surahName.size() <= 80
+        && data.ayah is int && data.ayah >= 1 && data.ayah <= 286
+        && data.page is int && data.page >= 1 && data.page <= 604
+        && data.juz is int && data.juz >= 1 && data.juz <= 30
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.mode is string && data.mode in ['voice', 'manual']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCompletedVerse(data) {
+      return data.keys().hasAll(['ownerId', 'surah', 'ayah', 'completedDate', 'createdAt'])
+        && data.keys().hasOnly(['ownerId', 'surah', 'ayah', 'completedDate', 'createdAt'])
+        && data.ownerId is string
+        && data.ownerId.size() >= 1
+        && data.ownerId.size() <= 128
+        && data.ownerId == request.auth.uid
+        && data.surah is int && data.surah >= 1 && data.surah <= 114
+        && data.ayah is int && data.ayah >= 1 && data.ayah <= 286
+        && isValidDateKey(data.completedDate)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidDailyActivity(data) {
+      return data.keys().hasAll([
+          'ownerId',
+          'date',
+          'uniqueCount',
+          'practiceRepeats',
+          'readingSeconds',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'date',
+          'uniqueCount',
+          'practiceRepeats',
+          'readingSeconds',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId.size() >= 1
+        && data.ownerId.size() <= 128
+        && data.ownerId == request.auth.uid
+        && isValidDateKey(data.date)
+        && data.uniqueCount is int && data.uniqueCount >= 0 && data.uniqueCount <= 6236
+        && data.practiceRepeats is int && data.practiceRepeats >= 0 && data.practiceRepeats <= 100000
+        && data.readingSeconds is int && data.readingSeconds >= 0 && data.readingSeconds <= 86400
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidReadingSession(data) {
+      return data.keys().hasAll([
+          'ownerId',
+          'surah',
+          'surahName',
+          'startAyah',
+          'endAyah',
+          'versesCount',
+          'durationSeconds',
+          'mode',
+          'startedAt',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'surah',
+          'surahName',
+          'startAyah',
+          'endAyah',
+          'versesCount',
+          'durationSeconds',
+          'mode',
+          'startedAt',
+          'createdAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId.size() >= 1
+        && data.ownerId.size() <= 128
+        && data.ownerId == request.auth.uid
+        && data.surah is int && data.surah >= 1 && data.surah <= 114
+        && data.surahName is string && data.surahName.size() >= 1 && data.surahName.size() <= 80
+        && data.startAyah is int && data.startAyah >= 1 && data.startAyah <= 286
+        && data.endAyah is int && data.endAyah >= 1 && data.endAyah <= 286
+        && data.versesCount is int && data.versesCount >= 1 && data.versesCount <= 286
+        && data.durationSeconds is int && data.durationSeconds >= 1 && data.durationSeconds <= 86400
+        && data.mode is string && data.mode in ['voice', 'manual']
+        && data.startedAt is string && data.startedAt.size() >= 10 && data.startedAt.size() <= 40
+        && data.createdAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayName', 'photoURL', 'theme', 'arabicFontSize',
+            'translationFontSize', 'translationFormat', 'arabicFont',
+            'lineSpacing', 'showTranslation', 'voiceTrackingEnabled', 'updatedAt'
+          ])
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'lastSurah', 'lastSurahName', 'lastAyah', 'lastPage',
+            'lastJuz', 'lastMode', 'updatedAt'
+          ])
+        );
+      allow delete: if false;
+
+      match /bookmarks/{bookmarkId} {
+        allow get: if isValidId(userId) && isValidId(bookmarkId) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(bookmarkId)
+          && isOwner(userId)
+          && isValidBookmark(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId)
+          && isValidId(bookmarkId)
+          && isOwner(userId)
+          && isValidBookmark(incoming())
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly([
+              'surah', 'surahName', 'ayah', 'page', 'juz', 'name', 'mode', 'updatedAt'
+            ])
+          );
+        allow delete: if isValidId(userId) && isValidId(bookmarkId) && isOwner(userId);
+      }
+
+      match /completedVerses/{verseKey} {
+        allow get: if isValidId(userId) && isValidVerseKey(verseKey) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidVerseKey(verseKey)
+          && isOwner(userId)
+          && isValidCompletedVerse(incoming())
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if false;
+      }
+
+      match /dailyActivity/{dateKey} {
+        allow get: if isValidId(userId) && isValidDateKey(dateKey) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidDateKey(dateKey)
+          && isOwner(userId)
+          && isValidDailyActivity(incoming())
+          && incoming().date == dateKey
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId)
+          && isValidDateKey(dateKey)
+          && isOwner(userId)
+          && isValidDailyActivity(incoming())
+          && incoming().ownerId == existing().ownerId
+          && incoming().date == existing().date
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'uniqueCount', 'practiceRepeats', 'readingSeconds', 'updatedAt'
+          ]);
+        allow delete: if false;
+      }
+
+      match /sessions/{sessionId} {
+        allow get: if isValidId(userId) && isValidId(sessionId) && isOwner(userId);
+        allow list: if isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(sessionId)
+          && isOwner(userId)
+          && isValidReadingSession(incoming())
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+  }
+}

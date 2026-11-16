@@ -1,0 +1,307 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User reading preferences and automatic last reading position.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["light", "sepia", "dark"],
+          "maxLength": 16
+        },
+        "arabicFontSize": {
+          "type": "string",
+          "enum": ["sm", "md", "lg", "xl"],
+          "maxLength": 8
+        },
+        "translationFontSize": {
+          "type": "string",
+          "enum": ["sm", "md", "lg", "xl"],
+          "maxLength": 8
+        },
+        "translationFormat": {
+          "type": "string",
+          "enum": ["hinglish", "hindi", "both", "transliteration"],
+          "maxLength": 24
+        },
+        "arabicFont": {
+          "type": "string",
+          "enum": ["amiri", "scheherazade", "naskh"],
+          "maxLength": 24
+        },
+        "lineSpacing": {
+          "type": "string",
+          "enum": ["compact", "normal", "relaxed"],
+          "maxLength": 16
+        },
+        "showTranslation": {
+          "type": "boolean"
+        },
+        "voiceTrackingEnabled": {
+          "type": "boolean"
+        },
+        "lastSurah": {
+          "type": "integer"
+        },
+        "lastSurahName": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "lastAyah": {
+          "type": "integer"
+        },
+        "lastPage": {
+          "type": "integer"
+        },
+        "lastJuz": {
+          "type": "integer"
+        },
+        "lastMode": {
+          "type": "string",
+          "enum": ["voice", "manual"],
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "lastSurah",
+        "lastSurahName",
+        "lastAyah",
+        "lastPage",
+        "lastJuz",
+        "lastMode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Bookmark": {
+      "title": "Bookmark",
+      "description": "A user-saved Quran verse bookmark.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "surah": {
+          "type": "integer"
+        },
+        "surahName": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "ayah": {
+          "type": "integer"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "juz": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["voice", "manual"],
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "surah",
+        "surahName",
+        "ayah",
+        "page",
+        "juz",
+        "name",
+        "mode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CompletedVerse": {
+      "title": "CompletedVerse",
+      "description": "Idempotent record of a unique verse completed by the user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "surah": {
+          "type": "integer"
+        },
+        "ayah": {
+          "type": "integer"
+        },
+        "completedDate": {
+          "type": "string",
+          "maxLength": 16,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "surah", "ayah", "completedDate", "createdAt"]
+    },
+    "DailyActivity": {
+      "title": "DailyActivity",
+      "description": "Date-keyed reading statistics for a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 16,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "uniqueCount": {
+          "type": "integer"
+        },
+        "practiceRepeats": {
+          "type": "integer"
+        },
+        "readingSeconds": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "date",
+        "uniqueCount",
+        "practiceRepeats",
+        "readingSeconds",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ReadingSession": {
+      "title": "ReadingSession",
+      "description": "Summary of a completed reading or voice-tracking session.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "surah": {
+          "type": "integer"
+        },
+        "surahName": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "startAyah": {
+          "type": "integer"
+        },
+        "endAyah": {
+          "type": "integer"
+        },
+        "versesCount": {
+          "type": "integer"
+        },
+        "durationSeconds": {
+          "type": "integer"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["voice", "manual"],
+          "maxLength": 16
+        },
+        "startedAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "surah",
+        "surahName",
+        "startAyah",
+        "endAyah",
+        "versesCount",
+        "durationSeconds",
+        "mode",
+        "startedAt",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User reading settings and automatic last reading position."
+    },
+    "/users/{userId}/bookmarks/{bookmarkId}": {
+      "schema": { "$ref": "#/entities/Bookmark" },
+      "description": "User-saved Quran bookmarks."
+    },
+    "/users/{userId}/completedVerses/{verseKey}": {
+      "schema": { "$ref": "#/entities/CompletedVerse" },
+      "description": "Unique completed Quran verses for overall completion tracking."
+    },
+    "/users/{userId}/dailyActivity/{dateKey}": {
+      "schema": { "$ref": "#/entities/DailyActivity" },
+      "description": "Daily reading statistics keyed by YYYY-MM-DD."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/ReadingSession" },
+      "description": "Recent reading session records."
+    }
+  }
+}

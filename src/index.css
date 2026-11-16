@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-canvas: #FAF8F5;
+  --bg-surface: #F2EFE9;
+  --bg-elevated: #FFFFFF;
+  --bg-highlight: #E8F1EC;
+  --border-hairline: #E5DFD5;
+  --border-active: #1B4D3E;
+  --text-ink: #1C1917;
+  --text-muted: #6B655E;
+  --accent-primary: #1B4D3E;
+  --accent-primary-fg: #FAF8F5;
+  --accent-warm: #8C6239;
+}
+
+.theme-sepia {
+  --bg-canvas: #F4ECD8;
+  --bg-surface: #EAE0C8;
+  --bg-elevated: #FBF5E6;
+  --bg-highlight: #E5D6B8;
+  --border-hairline: #D8CCB4;
+  --border-active: #7C4A1E;
+  --text-ink: #2C2218;
+  --text-muted: #736352;
+  --accent-primary: #7C4A1E;
+  --accent-primary-fg: #FBF5E6;
+  --accent-warm: #5E3511;
+}
+
+.dark,
+.theme-dark {
+  --bg-canvas: #111312;
+  --bg-surface: #1A1D1B;
+  --bg-elevated: #212523;
+  --bg-highlight: #192E26;
+  --border-hairline: #2B302C;
+  --border-active: #52A688;
+  --text-ink: #EDEAE2;
+  --text-muted: #A19B91;
+  --accent-primary: #52A688;
+  --accent-primary-fg: #0D1411;
+  --accent-warm: #C89B6E;
+}
+
+@layer base {
+  html {
+    background-color: var(--bg-canvas);
+    color: var(--text-ink);
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-ink);
+    transition: background-color 180ms ease, color 180ms ease;
+    margin: 0;
+  }
+}
+
+.font-editorial {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-arabic-amiri {
+  font-family: 'Amiri Quran', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+}
+
+.font-arabic-scheherazade {
+  font-family: 'Scheherazade New', 'Amiri Quran', 'Noto Naskh Arabic', serif;
+}
+
+.font-arabic-naskh {
+  font-family: 'Noto Naskh Arabic', 'Amiri Quran', serif;
+}
+
+.font-mono-tabular {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Smooth book scroll behavior */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
